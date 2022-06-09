@@ -30,9 +30,9 @@ impl fmt::Display for Subtitle {
         fmt_duration_srt(self.start, f)?;
         write!(f, " --> ")?;
         fmt_duration_srt(self.end, f)?;
-        writeln!(f, "")?;
+        writeln!(f)?;
         writeln!(f, "{}", self.text)?;
-        writeln!(f, "")
+        writeln!(f)
     }
 }
 

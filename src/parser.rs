@@ -208,7 +208,7 @@ mod tests {
         }
         fn sub(&self) -> Subtitle {
             let mut text = self.lines.join("\n");
-            text.push_str("\n");
+            text.push('\n');
             Subtitle {
                 idx: self.unit,
                 start: self.start,
@@ -221,8 +221,8 @@ mod tests {
     const EX_TS_1: TimeSpanTestCase = TimeSpanTestCase {
         unit: 1,
         raw: "00:00:02,002 --> 00:00:05,403",
-        start: Duration::from_millis(02 * 1000 + 2),
-        end: Duration::from_millis(05 * 1000 + 403),
+        start: Duration::from_millis(2 * 1000 + 2),
+        end: Duration::from_millis(5 * 1000 + 403),
         lines: &[
             "<i>Now the story of a wealthy family</i>",
             "<i>who lost everything...</i>",
@@ -232,16 +232,16 @@ mod tests {
     const EX_TS_2: TimeSpanTestCase = TimeSpanTestCase {
         unit: 2,
         raw: "00:00:05,505 --> 00:00:07,496",
-        start: Duration::from_millis(05 * 1000 + 505),
-        end: Duration::from_millis(07 * 1000 + 496),
+        start: Duration::from_millis(5 * 1000 + 505),
+        end: Duration::from_millis(7 * 1000 + 496),
         lines: &["<i>and the one son</i>", "<i>who had no choice...</i>"],
     };
 
     const EX_TS_3: TimeSpanTestCase = TimeSpanTestCase {
         unit: 3,
         raw: "00:00:07,607 --> 00:00:09,598",
-        start: Duration::from_millis(07 * 1000 + 607),
-        end: Duration::from_millis(09 * 1000 + 598),
+        start: Duration::from_millis(7 * 1000 + 607),
+        end: Duration::from_millis(9 * 1000 + 598),
         lines: &["<i>but to keep them all together.</i>"],
     };
 
