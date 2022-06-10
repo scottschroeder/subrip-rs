@@ -1,13 +1,26 @@
 [package]
-name = "subrip-rs"
+name = "subrip"
 version = "0.1.0"
 edition = "2021"
+authors = ["Scott Schroeder <scottschroeder@sent.com>"]
+
+description = """
+subrip-rs is a library for parsing, authoring, and working with Subrip/SRT (.srt) files
+"""
+
+documentation = "https://github.com/scottschroeder/subrip-rs"
+homepage = "https://github.com/scottschroeder/subrip-rs"
+repository = "https://github.com/scottschroeder/subrip-rs"
+readme = "README.md"
+keywords = ["SRT", "subrip", "subtitles", "parser"]
+categories = ["parser-implementations"]
+license = "MIT"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 nom = "7.1"
-serde = { version = "1.0", features = ["derive"], optional = true }
+serde = { version = "1", features = ["derive"], optional = true }
 
 [features]
 serde = ["dep:serde"]
