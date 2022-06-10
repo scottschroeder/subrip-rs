@@ -1,11 +1,21 @@
 use std::{fmt, time::Duration};
 
 pub use parser::parse;
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
 mod parser;
+pub mod utils;
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug)]
+#[non_exhaustive]
+pub enum Error {
+    ParseError,
+    ParseIncomplete(Vec<Subtitle>, usize),
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Subtitle {
     pub idx: u32,
     pub start: Duration,
@@ -14,7 +24,7 @@ pub struct Subtitle {
 }
 
 fn fmt_duration_srt(d: Duration, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    let millis = d.as_millis();
+    let millis = d.as_millis() as u64;
     let secs = millis / 1000;
     let millis = millis % 1000;
     let minutes = secs / 60;
@@ -34,20 +44,4 @@ impl fmt::Display for Subtitle {
         writeln!(f, "{}", self.text)?;
         writeln!(f)
     }
-}
-
-pub fn offset_subs(delay_start: Option<Duration>, subs: &[Subtitle]) -> Vec<Subtitle> {
-    if subs.is_empty() {
-        return vec![];
-    }
-    let base = subs[0].start - delay_start.unwrap_or_else(|| Duration::from_micros(0));
-    subs.iter()
-        .enumerate()
-        .map(|(idx, s)| Subtitle {
-            idx: idx as u32,
-            start: s.start - base,
-            end: s.end - base,
-            text: s.text.clone(),
-        })
-        .collect()
 }

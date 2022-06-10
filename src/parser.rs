@@ -9,7 +9,7 @@ use nom::{
     IResult,
 };
 
-use crate::Subtitle;
+use crate::{Error, Subtitle};
 
 fn decimal(input: &str) -> IResult<&str, &str> {
     recognize(many1(one_of("0123456789")))(input)
@@ -86,30 +86,15 @@ fn srt_file(input: &str) -> IResult<&str, Vec<Subtitle>> {
     )(input)
 }
 
-pub fn parse(input: &str) -> anyhow::Result<Vec<Subtitle>> {
-    let (leftover, mut results) =
-        srt_file(input).map_err(|e| anyhow::anyhow!("could not parse srt file: {}", e))?;
+pub fn parse(input: &str) -> Result<Vec<Subtitle>, Error> {
+    let (leftover, results) = srt_file(input).map_err(|_| Error::ParseError)?;
+
     if !leftover.is_empty() {
-        log::warn!("unparsed data at end of file: {:?}", leftover)
+        let start_remainder = input.len() - leftover.len();
+        Err(Error::ParseIncomplete(results, start_remainder))
+    } else {
+        Ok(results)
     }
-
-    results.sort_by(|x, y| x.idx.cmp(&y.idx));
-
-    let mut t = Duration::new(0, 0);
-    for r in &results {
-        if r.start < t || r.end < r.start {
-            log::warn!(
-                "subtitle timestamps are not in order, previous:{:?}, idx:{} start:{:?} end:{:?}",
-                t,
-                r.idx,
-                r.start,
-                r.end
-            );
-        }
-        t = r.start
-    }
-
-    Ok(results)
 }
 
 #[cfg(test)]
