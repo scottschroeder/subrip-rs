@@ -15,16 +15,14 @@ pub mod utils;
 #[non_exhaustive]
 /// Error type for crate
 pub enum Error {
-    /// Failure to parse SRT from provided text
-    ParseError,
-    /// Parsing completed with leftovers at the end of the file.
+    /// Parsing did not make it through the entire file.
     ///
     /// Existing tools seem pretty forgiving with parsing SRT files,
     /// so you may occasionally find junk at the bottom of the file.
     ///
     /// This error includes whatever we could parse, as well as the index
     /// where parsing began to fail.
-    ParseIncomplete(Vec<Subtitle>, usize),
+    ParseError(Vec<Subtitle>, usize),
 }
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]

@@ -80,10 +80,7 @@ fn subtitle(input: &str) -> IResult<&str, Subtitle> {
 }
 
 fn srt_file(input: &str) -> IResult<&str, Vec<Subtitle>> {
-    preceded(
-        many0(tag("\u{FEFF}")),
-        preceded(many0(line_ending), many0(subtitle)),
-    )(input)
+    preceded(many0(line_ending), many0(subtitle))(input)
 }
 
 /// Parse some SRT formatted text.
@@ -91,11 +88,11 @@ fn srt_file(input: &str) -> IResult<&str, Vec<Subtitle>> {
 /// See [`Error::ParseIncomplete`] for a common
 /// and partially recoverable error outcome.
 pub fn parse(input: &str) -> Result<Vec<Subtitle>, Error> {
-    let (leftover, results) = srt_file(input).map_err(|_| Error::ParseError)?;
+    let (leftover, results) = srt_file(input).map_err(|_| Error::ParseError(vec![], 0))?;
 
     if !leftover.is_empty() {
         let start_remainder = input.len() - leftover.len();
-        Err(Error::ParseIncomplete(results, start_remainder))
+        Err(Error::ParseError(results, start_remainder))
     } else {
         Ok(results)
     }
@@ -234,7 +231,11 @@ mod tests {
         lines: &["<i>but to keep them all together.</i>"],
     };
 
-    fn test_srt(ending: LineEnding, extra_text_line: bool, short_ending: bool) {
+    fn build_srt(
+        ending: LineEnding,
+        extra_text_line: bool,
+        short_ending: bool,
+    ) -> (String, Vec<Subtitle>) {
         let mut input = String::new();
         input.push_str(EX_TS_1.input(ending, extra_text_line, true).as_str());
         input.push_str(EX_TS_2.input(ending, extra_text_line, true).as_str());
@@ -244,7 +245,11 @@ mod tests {
                 .as_str(),
         );
         let expected = vec![EX_TS_1.sub(), EX_TS_2.sub(), EX_TS_3.sub()];
+        (input, expected)
+    }
 
+    fn test_srt(ending: LineEnding, extra_text_line: bool, short_ending: bool) {
+        let (input, expected) = build_srt(ending, extra_text_line, short_ending);
         let (subt_rem, res) = srt_file(input.as_str()).unwrap();
         assert_eq!(subt_rem, "");
         assert_eq!(res, expected);
@@ -315,5 +320,21 @@ mod tests {
     #[test]
     fn parse_srt_windows_text_newline_short() {
         test_srt(LineEnding::Windows, true, true)
+    }
+
+    #[test]
+    fn parse_incomplete() {
+        let (mut input, expected) = build_srt(LineEnding::Windows, true, true);
+        let junk = "this is extra junk at the end of the file";
+        input.push_str(junk);
+
+        match parse(input.as_str()) {
+            Ok(_) => panic!("expected error"),
+            Err(Error::ParseError(res, offset)) => {
+                assert_eq!(res, expected);
+                let remainder = std::str::from_utf8(&input.as_bytes()[offset..]).unwrap();
+                assert_eq!(remainder, junk);
+            }
+        }
     }
 }
