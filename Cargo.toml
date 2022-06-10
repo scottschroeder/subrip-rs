@@ -25,3 +25,5 @@ serde = { version = "1", features = ["derive"], optional = true }
 [features]
 serde = ["dep:serde"]
 
+[dev-dependencies]
+encoding_rs = "0.8.31"
