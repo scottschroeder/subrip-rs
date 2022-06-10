@@ -86,6 +86,10 @@ fn srt_file(input: &str) -> IResult<&str, Vec<Subtitle>> {
     )(input)
 }
 
+/// Parse some SRT formatted text.
+///
+/// See [`Error::ParseIncomplete`] for a common
+/// and partially recoverable error outcome.
 pub fn parse(input: &str) -> Result<Vec<Subtitle>, Error> {
     let (leftover, results) = srt_file(input).map_err(|_| Error::ParseError)?;
 
