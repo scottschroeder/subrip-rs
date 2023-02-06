@@ -3,7 +3,7 @@ use std::time::Duration;
 use nom::{
     bytes::complete::{is_not, tag},
     character::complete::{line_ending, one_of},
-    combinator::{map, map_res, recognize},
+    combinator::{map, map_res, opt, recognize},
     multi::{many0, many1},
     sequence::{preceded, terminated, tuple},
     IResult,
@@ -13,6 +13,10 @@ use crate::{Error, Subtitle};
 
 fn decimal(input: &str) -> IResult<&str, &str> {
     recognize(many1(one_of("0123456789")))(input)
+}
+
+fn bom(input: &str) -> IResult<&str, &str> {
+    tag("\u{feff}")(input)
 }
 
 fn ascii_u32(input: &str) -> IResult<&str, u32> {
@@ -80,7 +84,7 @@ fn subtitle(input: &str) -> IResult<&str, Subtitle> {
 }
 
 fn srt_file(input: &str) -> IResult<&str, Vec<Subtitle>> {
-    preceded(many0(line_ending), many0(subtitle))(input)
+    preceded(tuple((opt(bom), many0(line_ending))), many0(subtitle))(input)
 }
 
 /// Parse some SRT formatted text.
@@ -235,8 +239,12 @@ mod tests {
         ending: LineEnding,
         extra_text_line: bool,
         short_ending: bool,
+        leading_bom: bool,
     ) -> (String, Vec<Subtitle>) {
         let mut input = String::new();
+        if leading_bom {
+            input.push('\u{feff}')
+        }
         input.push_str(EX_TS_1.input(ending, extra_text_line, true).as_str());
         input.push_str(EX_TS_2.input(ending, extra_text_line, true).as_str());
         input.push_str(
@@ -248,8 +256,8 @@ mod tests {
         (input, expected)
     }
 
-    fn test_srt(ending: LineEnding, extra_text_line: bool, short_ending: bool) {
-        let (input, expected) = build_srt(ending, extra_text_line, short_ending);
+    fn test_srt(ending: LineEnding, extra_text_line: bool, short_ending: bool, leading_bom: bool) {
+        let (input, expected) = build_srt(ending, extra_text_line, short_ending, leading_bom);
         let (subt_rem, res) = srt_file(input.as_str()).unwrap();
         assert_eq!(subt_rem, "");
         assert_eq!(res, expected);
@@ -290,41 +298,45 @@ mod tests {
     }
 
     #[test]
+    fn parse_srt_leading_byte_order_mark() {
+        test_srt(LineEnding::Unix, false, false, true)
+    }
+    #[test]
     fn parse_srt_unix() {
-        test_srt(LineEnding::Unix, false, false)
+        test_srt(LineEnding::Unix, false, false, false)
     }
     #[test]
     fn parse_srt_windows() {
-        test_srt(LineEnding::Windows, false, false)
+        test_srt(LineEnding::Windows, false, false, false)
     }
     #[test]
     fn parse_srt_unix_text_newline() {
-        test_srt(LineEnding::Unix, true, false)
+        test_srt(LineEnding::Unix, true, false, false)
     }
     #[test]
     fn parse_srt_windows_text_newline() {
-        test_srt(LineEnding::Windows, true, false)
+        test_srt(LineEnding::Windows, true, false, false)
     }
     #[test]
     fn parse_srt_unix_short() {
-        test_srt(LineEnding::Unix, false, true)
+        test_srt(LineEnding::Unix, false, true, false)
     }
     #[test]
     fn parse_srt_windows_short() {
-        test_srt(LineEnding::Windows, false, true)
+        test_srt(LineEnding::Windows, false, true, false)
     }
     #[test]
     fn parse_srt_unix_text_newline_short() {
-        test_srt(LineEnding::Unix, true, true)
+        test_srt(LineEnding::Unix, true, true, false)
     }
     #[test]
     fn parse_srt_windows_text_newline_short() {
-        test_srt(LineEnding::Windows, true, true)
+        test_srt(LineEnding::Windows, true, true, false)
     }
 
     #[test]
     fn parse_incomplete() {
-        let (mut input, expected) = build_srt(LineEnding::Windows, true, true);
+        let (mut input, expected) = build_srt(LineEnding::Windows, true, true, false);
         let junk = "this is extra junk at the end of the file";
         input.push_str(junk);
 
