@@ -1,6 +1,6 @@
 [package]
 name = "subrip"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 authors = ["Scott Schroeder <scottschroeder@sent.com>"]
 
@@ -26,4 +26,4 @@ serde = { version = "1", features = ["derive"], optional = true }
 serde = ["dep:serde"]
 
 [dev-dependencies]
-encoding_rs = "0.8.31"
+encoding_rs = "0.8.32"
